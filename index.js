@@ -14,10 +14,10 @@ Mustache.parse(template);
 
 const htmlOptions = {
   height: "2.3125in",
-  width: "4in",
+  width: "3.85in",
   border: "0",
 
-  base: "file:///Users/uahav/Developer/cwn-name-tags/"
+  base: "file:///home/pi/cwn-name-tags/"
 };
 
 function convertToHTML(person) {
@@ -49,13 +49,14 @@ app.post("/print", (req, res) => {
       console.log(err);
       return;
     }
-    printer.printFile(filename, {destination: "DYMO"}, jobNumber).on("end", () => {
+    printer.printFile(filename, {}, jobNumber).on("end", () => {
       console.log(`Job ${jobNumber} queued for printing.`);
       fs.unlink(filename, err => {
         if (err) console.log(err);
       });
       jobNumber++;
-    }).on("error", err => {
+    }).on("error", mesg => {
+      console.log(mesg);
       console.log(`ERROR queueing job ${jobNumber} for printing.`);
     });
   });
