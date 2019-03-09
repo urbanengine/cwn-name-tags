@@ -2,9 +2,12 @@ let express = require("express");
 let bodyParser = require("body-parser");
 let Mustache = require("mustache");
 let pdf = require("html-pdf");
+let printer = require("printer-lp");
 let fs = require("fs");
 let app = express();
+
 let port = process.env.PORT || 80;
+let jobNumber = 0;
 
 let template = fs.readFileSync("template.html", "utf8");
 Mustache.parse(template);
@@ -39,11 +42,22 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.post("/print", (req, res) => {
   let person = req.body;
   let html = convertToHTML(person);
-  fs.writeFileSync("./generatedNameTag.html", html);
-  console.log(`creating PDF for member ${person.name}...`);
-  pdf.create(html, htmlOptions).toFile("./generatedNameTag.pdf", (err, res) => {
-    if (err) console.log(err);
-    else console.log(`SUCCESS. You may open it now.`);
+  console.log(`Received data for ${person.name}. Generating name tag.`);
+  filename = `./generatedNameTag${jobNumber}.pdf`;
+  pdf.create(html, htmlOptions).toFile(filename, (err, res) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    printer.printFile(filename, {destination: "DYMO"}, jobNumber).on("end", () => {
+      console.log(`Job ${jobNumber} queued for printing.`);
+      fs.unlink(filename, err => {
+        if (err) console.log(err);
+      });
+      jobNumber++;
+    }).on("error", err => {
+      console.log(`ERROR queueing job ${jobNumber} for printing.`);
+    });
   });
 
   res.sendStatus(200);
