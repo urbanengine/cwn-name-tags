@@ -11,10 +11,10 @@ Mustache.parse(template);
 
 const htmlOptions = {
   height: "2.3125in",
-  width: "3.8in",
+  width: "4in",
   border: "0",
 
-  base: "file:///Users/willfreeman/Developer/nametag/"
+  base: "file:///Users/uahav/Developer/cwn-name-tags/"
 };
 
 function convertToHTML(person) {
