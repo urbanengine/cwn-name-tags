@@ -6,10 +6,10 @@ let printer = require("printer-lp");
 let fs = require("fs");
 let app = express();
 
-let port = process.env.PORT || 80;
+let port = process.env.PORT || 3000;
 let jobNumber = 0;
 
-let template = fs.readFileSync("template.html", "utf8");
+let template = fs.readFileSync("/home/pi/cwn-name-tags/template.html", "utf8");
 Mustache.parse(template);
 
 const htmlOptions = {
@@ -38,6 +38,10 @@ app.use(bodyParser.json());
 // support for url encoded bodies
 app.use(bodyParser.urlencoded({ extended: true }));
 
+app.get("/test", (req, res) => {
+  res.send("it works");
+});
+
 // POST: /print
 app.post("/print", (req, res) => {
   let person = req.body;
@@ -65,4 +69,4 @@ app.post("/print", (req, res) => {
 });
 
 app.listen(port);
-console.log("Listening on port 80...");
+console.log(`Listening on port ${port}...`);
