@@ -21,15 +21,18 @@ const htmlOptions = {
 };
 
 function convertToHTML(person) {
-  let nameSegments = person.name.split(" ");
-  let json = {
-    firstName: nameSegments[0],
-    lastName: nameSegments[nameSegments.length - 1],
-    jobTitle: person.jobTitle,
-    visitCount: person.visitCount,
-    memberStatus: person.visitCount > 0 ? "veteran" : "first-timer"
-  };
-  return Mustache.render(template, json);
+  person.memberStatus = person.visitCount > 0 ? "veteran" : "first-timer";
+  return Mustache.render(template, person);
+}
+
+function checkAuth(req, res, next) {
+  if (
+    !req.headers.authorization ||
+    req.headers.authorization !== process.env.APIKEY
+  ) {
+    console.log("Forbidden Request");
+    res.sendStatus(403);
+  } else next();
 }
 
 // support for JSON-encoded bodies
@@ -37,6 +40,8 @@ app.use(bodyParser.json());
 
 // support for url encoded bodies
 app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use(checkAuth);
 
 app.get("/test", (req, res) => {
   res.send("it works");
@@ -46,23 +51,30 @@ app.get("/test", (req, res) => {
 app.post("/print", (req, res) => {
   let person = req.body;
   let html = convertToHTML(person);
-  console.log(`Received data for ${person.name}. Generating name tag.`);
+  console.log(
+    `Received data for ${person.firstName} ${
+      person.lastName
+    }. Generating name tag.`
+  );
   filename = `./generatedNameTag${jobNumber}.pdf`;
   pdf.create(html, htmlOptions).toFile(filename, (err, res) => {
     if (err) {
       console.log(err);
       return;
     }
-    printer.printFile(filename, {}, jobNumber).on("end", () => {
-      console.log(`Job ${jobNumber} queued for printing.`);
-      fs.unlink(filename, err => {
-        if (err) console.log(err);
+    printer
+      .printFile(filename, {}, jobNumber)
+      .on("end", () => {
+        console.log(`Job ${jobNumber} queued for printing.`);
+        fs.unlink(filename, err => {
+          if (err) console.log(err);
+        });
+        jobNumber++;
+      })
+      .on("error", mesg => {
+        console.log(mesg);
+        console.log(`ERROR queueing job ${jobNumber} for printing.`);
       });
-      jobNumber++;
-    }).on("error", mesg => {
-      console.log(mesg);
-      console.log(`ERROR queueing job ${jobNumber} for printing.`);
-    });
   });
 
   res.sendStatus(200);
