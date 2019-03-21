@@ -14,16 +14,11 @@ Mustache.parse(template);
 
 const htmlOptions = {
   height: "2.3125in",
-  width: "3.85in",
+  width: "3.99in",
   border: "0",
 
   base: "file:///home/pi/cwn-name-tags/"
 };
-
-function convertToHTML(person) {
-  person.memberStatus = person.visitCount > 0 ? "veteran" : "first-timer";
-  return Mustache.render(template, person);
-}
 
 function checkAuth(req, res, next) {
   if (
@@ -50,7 +45,8 @@ app.get("/test", (req, res) => {
 // POST: /print
 app.post("/print", (req, res) => {
   let person = req.body;
-  let html = convertToHTML(person);
+  console.log(person);
+  let html = Mustache.render(template, person);
   console.log(
     `Received data for ${person.firstName} ${
       person.lastName
@@ -63,7 +59,11 @@ app.post("/print", (req, res) => {
       return;
     }
     printer
-      .printFile(filename, {}, jobNumber)
+      .printFile(
+        filename,
+        { fitplot: true, media: "om_w167h288_58.76x101.6mm" },
+        jobNumber
+      )
       .on("end", () => {
         console.log(`Job ${jobNumber} queued for printing.`);
         fs.unlink(filename, err => {
